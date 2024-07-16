@@ -6,24 +6,47 @@ from typing import List, Dict
 from PIL import Image, ImageDraw
 import io
 import requests
+import motor.motor_asyncio
 
 
 class HOKABot(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # mongoengine.connect('CardBot', host=kwargs['mongodb_uri'])
+        self.databaseClient = client = motor.motor_asyncio.AsyncIOMotorClient(kwargs['mongodb_uri'])
+        self.database = self.databaseClient["HOKA"]
+        self.usersCollection = self.database["users"]
+        self.inviteCollection = self.database["invites"]
 
     async def on_ready(self):
-        # await self.tree.sync()
         print(f"Logged in as {self.user}")
 
     async def setup_hook(self):
         for cog in config.cogs:
             await self.load_extension(f"cogs.{cog}")
 
+    async def userInviteDocument(self, user: discord.User) -> Dict:
+        userDoc = await self.inviteCollection.find_one({"_id": user.id})
+
+        if not userDoc:
+            inviteChannel = await self.fetch_channel(config.INVITE_LINK_CHANNEL_ID)
+            invite = await inviteChannel.create_invite(reason=f"{user.name}'s Unique Invite Link")
+
+            data = {
+                "_id": user.id,
+                "inviteLink": invite.url,
+                "invitedUsers": []
+            }
+            await self.inviteCollection.insert_one(data)
+            userDoc = data
+
+        return userDoc
+
+
+    # async def userDocument(self, user: discord.User) -> dict:
+
+
     async def uploadFile(self, data) -> str:
         storageChannel = self.get_channel(config.STORAGE_ID)
-
         message = await storageChannel.send(file=discord.File(fp=data, filename="role_positioning.png"))
 
         return message.attachments[0].url

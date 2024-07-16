@@ -31,8 +31,7 @@ class LFGCog(commands.Cog):
                 await msg.edit(attachments=[])
             except Exception as e:
                 print(e)
-        print(f"Refresh {len(self.active_lfg)} LFG Messages.")
-
+        # print(f"Refreshed {len(self.active_lfg)} LFG Messages.")
 
     @tasks.loop(seconds=10)
     async def stickyPost(self):
@@ -53,7 +52,6 @@ class LFGCog(commands.Cog):
         # if not sticky:
         #     await stickyMsg.delete()
         #     stickyMsg = await self.lfg_post()
-
 
 
     async def lfg_post(self) -> discord.Message:
@@ -196,7 +194,7 @@ class LFGCog(commands.Cog):
         async def startCallback(ctx: Interaction):
             if ctx.user == partyLeader:
                 self.active_lfg.remove(partyMessage)
-                partyEmbed.title = "**Group Started**"
+                partyEmbed.title = f"**Group Started** ({len(users)}/{size})"
                 return await ctx.response.edit_message(view=None, embed=partyEmbed)
             return await ctx.response.edit_message(attachments=[])
 
@@ -247,9 +245,9 @@ class LFGCog(commands.Cog):
         view.add_item(leaveButton)
         view.add_item(startButton)
 
-        await ctx.edit_original_response(content="**LFG Created**", view=None)
         lfgChannel: discord.TextChannel = ctx.guild.get_channel(config.LFG_MSG_CHANNEL_ID)
         partyMessage = await lfgChannel.send(content=f"**{message}**" if message else "" + "\n" + messageContent, embed=partyEmbed, view=view)
+        await ctx.edit_original_response(content=F"**LFG Created** {partyMessage.jump_url}", view=None)
         self.active_lfg.append(partyMessage)
 
 
