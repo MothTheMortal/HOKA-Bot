@@ -18,8 +18,6 @@ class HOKABot(commands.Bot):
         self.usersCollection = self.database["users"]
         self.inviteCollection = self.database["invites"]
         self.redeemCollection = self.database["redeems"]
-        self.redeemCollection.find()
-
     async def on_ready(self):
         print(f"Logged in as {self.user}")
 
