@@ -1,6 +1,5 @@
 from discord.ext import commands
 import discord
-import mongoengine
 import config
 from typing import List, Dict
 from PIL import Image, ImageDraw
