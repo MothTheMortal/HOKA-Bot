@@ -2,13 +2,14 @@ from discord.ext import commands, tasks
 import discord
 from discord import app_commands, Interaction, Embed, Button, ui
 import config
-
+import asyncio
 
 class LFGCog(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.active_lfg = []
         self.post: discord.Message = None
+        self.party_locks = {}
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -46,14 +47,6 @@ class LFGCog(commands.Cog):
             await self.post.delete()
             self.post = await self.lfg_post()
 
-
-
-
-        # if not sticky:
-        #     await stickyMsg.delete()
-        #     stickyMsg = await self.lfg_post()
-
-
     async def lfg_post(self) -> discord.Message:
         startEmbed = Embed(title="HOKA LFG", description="Create a LFG")
         startEmbed.set_thumbnail(url=config.THUMBNAIL_URL)
@@ -64,8 +57,12 @@ class LFGCog(commands.Cog):
         notificationButton = ui.Button(label="Toggle", style=discord.ButtonStyle.blurple, emoji="🔔")
 
         async def notificationCallback(ctx: Interaction):
-            if not self.client.hasHOKRank(ctx.user, ctx.user.roles):
+
+            if self.client.hasHOKRank(ctx.user, ctx.user.roles):
                 return await ctx.response.send_message("Please assign yourself a HOK rank first.", ephemeral=True)
+
+
+
             await ctx.response.send_message("Enabled Notifications!", ephemeral=True)
 
         async def buttonCallBack(ctx: Interaction):
@@ -156,6 +153,9 @@ class LFGCog(commands.Cog):
             ctx.user: userRole
         }
 
+        party_id = f"{partyLeader.id}-{int(ctx.created_at.timestamp())}"
+        self.party_locks[party_id] = asyncio.Lock()
+
         description = f""
         for user in users:
             description += config.HOK_RANKS["Master"] + user.mention + f"** - {userRoles[user]}**\n"
@@ -192,50 +192,52 @@ class LFGCog(commands.Cog):
             await partyMessage.edit(embed=partyEmbed)
 
         async def startCallback(ctx: Interaction):
-            if ctx.user == partyLeader:
-                self.active_lfg.remove(partyMessage)
-                partyEmbed.title = f"**Group Started** ({len(users)}/{size})"
-                return await ctx.response.edit_message(view=None, embed=partyEmbed)
-            return await ctx.response.edit_message(attachments=[])
+            async with self.party_locks[party_id]:  # Acquire the lock for this party
+                if ctx.user == partyLeader:
+                    self.active_lfg.remove(partyMessage)
+                    partyEmbed.title = f"**Group Started** ({len(users)}/{size})"
+                    return await ctx.response.edit_message(view=None, embed=partyEmbed)
+                return await ctx.response.edit_message(attachments=[])
 
         async def leaveCallback(ctx: Interaction):
-            if ctx.user not in users:
-                return await ctx.response.edit_message(attachments=[])
-            if ctx.user == partyLeader:
-                self.active_lfg.remove(partyMessage)
-                return await partyMessage.delete()
-            users.remove(ctx.user)
+            async with self.party_locks[party_id]:  # Acquire the lock for this party
+                if ctx.user not in users:
+                    return await ctx.response.edit_message(attachments=[])
+                if ctx.user == partyLeader:
+                    self.active_lfg.remove(partyMessage)
+                    return await partyMessage.delete()
+                users.remove(ctx.user)
 
-            await ctx.response.edit_message(attachments=[])
-            await refreshEmbed()
+                await ctx.response.edit_message(attachments=[])
+                await refreshEmbed()
 
         async def joinCallback(ctx: Interaction):
+            async with self.party_locks[party_id]:  # Acquire the lock for this party
+                if ctx.user in users or not len(users) < int(size):
+                    return await ctx.response.edit_message(attachments=[])
 
-            if ctx.user in users or not len(users) < int(size):
-                return await ctx.response.edit_message(attachments=[])
+                roleDropdown = ui.Select(placeholder="Select Role", options=[discord.SelectOption(label=key, value=key) for key in config.HOK_ROLES])
 
-            roleDropdown = ui.Select(placeholder="Select Role", options=[discord.SelectOption(label=key, value=key) for key in config.HOK_ROLES])
+                async def roleCallback(ctx: Interaction):
+                    async with self.party_locks[party_id]:  # Acquire the lock for this party
+                        roleSelected = roleDropdown.values[0]
+                        if roleSelected in userRoles.values():
+                            return await ctx.response.send_message("This role has already been selected.", ephemeral=True)
 
-            async def roleCallback(ctx: Interaction):
-                roleSelected = roleDropdown.values[0]
-                if roleSelected in userRoles.values():
-                    return await ctx.response.send_message("This role has already been selected.", ephemeral=True)
+                        if not len(users) < int(size):
+                            return await ctx.response.send_message("The party is already full", ephemeral=True)
 
-                if not len(users) < int(size):
-                    return await ctx.response.send_message("The party is already full", ephemeral=True)
+                        await ctx.response.send_message(f"The party code is **{code}**" if code else f"You have joined the Group, Contact {partyLeader.mention} for the party code", ephemeral=True)
+                        users.append(ctx.user)
+                        userRoles[ctx.user] = roleSelected
+                        await refreshEmbed(picUrl=True)
 
+                roleDropdown.callback = roleCallback
 
-                await ctx.response.send_message(f"The party code is **{code}**" if code else f"You have joined the Group, Contact {partyLeader.mention} for the party code", ephemeral=True)
-                users.append(ctx.user)
-                userRoles[ctx.user] = roleSelected
-                await refreshEmbed(picUrl=True)
+                view = ui.View(timeout=None)
+                view.add_item(roleDropdown)
 
-            roleDropdown.callback = roleCallback
-
-            view = ui.View(timeout=None)
-            view.add_item(roleDropdown)
-
-            await ctx.response.send_message(view=view, ephemeral=True)
+                await ctx.response.send_message(view=view, ephemeral=True)
 
         joinButton.callback = joinCallback
         leaveButton.callback = leaveCallback

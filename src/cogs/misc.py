@@ -10,6 +10,10 @@ class MiscCog(commands.Cog):
 
     @app_commands.command(name="reload-commands", description="Reloading commands")
     async def reload_commands(self, ctx: discord.Interaction):
+
+        if not self.client.isStaff(ctx.user) and ctx.user.id != self.client.owner_id:
+            return await self.client.userNotStaffError(ctx)
+
         synced = await self.client.tree.sync()
         await ctx.response.defer()
         print(f"Loaded {len(synced)} commands")

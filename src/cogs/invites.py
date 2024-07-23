@@ -55,25 +55,21 @@ class InvitesCog(commands.Cog):
 
         self.invites[ctx.guild.id] = await ctx.guild.invites()
 
+        rolesDict = {roleId: 0 for _, roleId in config.levelsToCheckInvite.items()}
 
-        # bot = 0
-        # rolesDict = {ctx.guild.get_role(roleId): 0 for roleId in config.roleIdsToCheckInvites}
-        #
-        # users = []
-        # for userId in inviteDocument['invitedUsers']:
-        #     user = await ctx.guild.fetch_member(userId)
-        #
-        #     if user.bot:
-        #         bot += 1
-        #         continue
-        #
-        #     for role in roleDict.keys():
-        #         if role in user.roles:
-        #             rolesDict[role] += 1
-        #     users.append(user)
+        for userId in inviteDocument['invitedUsers']:
+            userDoc = await self.client.userDocument(userId=userId)
+            userLevel, _ = self.client.calculate_level(userDoc['exp'])
+            for key in config.levelsToCheckInvite:
+                if userLevel >= key:
+                    rolesDict[config.levelsToCheckInvite[key]] += 1
+
+        text = ""
+        for key, val in rolesDict.items():
+            text += f"{'<@&' + key + '>' if ctx.guild.get_role(key) else '**Level ' + str({v: k for k, v in config.levelsToCheckInvite.items()}[key]) + '**'}: {val}\n"
 
         description = (f"**Total Invites:** {len(inviteDocument['invitedUsers'])}\n**Your Invite Link:** {inviteDocument['inviteLink']}\n"
-                       f"**Invitees:** {' '.join([f'<@{i}>' for i in inviteDocument['invitedUsers']]) if inviteDocument['invitedUsers'] else 'None'}")
+                       f"**Invitees:** {' '.join([f'<@{i}>' for i in inviteDocument['invitedUsers']]) if inviteDocument['invitedUsers'] else 'None'}\n**Levels Reached:  **\n{text}")
 
         inviteEmbed = discord.Embed(title="Invite Tracker", description=description)
 
