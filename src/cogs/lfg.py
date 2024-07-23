@@ -54,30 +54,17 @@ class LFGCog(commands.Cog):
 
         firstView = ui.View(timeout=None)
         button = ui.Button(label="Create Group", style=discord.ButtonStyle.green, emoji="<:add:1257611423358652439>")
-        notificationButton = ui.Button(label="Toggle", style=discord.ButtonStyle.blurple, emoji="🔔")
-
-        async def notificationCallback(ctx: Interaction):
-
-            if self.client.hasHOKRank(ctx.user, ctx.user.roles):
-                return await ctx.response.send_message("Please assign yourself a HOK rank first.", ephemeral=True)
-
-
-
-            await ctx.response.send_message("Enabled Notifications!", ephemeral=True)
 
         async def buttonCallBack(ctx: Interaction):
             return await self.lfg(ctx)
 
         button.callback = buttonCallBack
-        notificationButton.callback = notificationCallback
 
         firstView.add_item(button)
-        firstView.add_item(notificationButton)
 
         channel = self.client.get_channel(config.LFG_POST_CHANNEL_ID)
         message = await channel.send(embed=startEmbed, view=firstView)
         return message
-        # await ctx.response.send_message(embed=startEmbed, view=firstView)
 
     async def lfg(self, ctx: Interaction):
         view = ui.View(timeout=None)
