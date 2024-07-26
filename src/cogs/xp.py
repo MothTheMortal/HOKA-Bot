@@ -52,7 +52,6 @@ class XPCog(commands.Cog):
         if user is None:
             user = ctx.user
 
-
         userDoc = await self.client.userDocument(user)
 
         embed = discord.Embed(title=f"{user.name}'s Level", color=discord.Colour.blurple())

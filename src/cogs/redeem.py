@@ -118,8 +118,17 @@ class RedeemCog(commands.Cog):
             await ctx.response.send_message(f"You have redeemed a ticket!.", ephemeral=True)
             logMsg = f"**Ticket:** {redeemDocument['data']}"
 
+            overwrites = {
+                ctx.guild.default_role: discord.PermissionOverwrite(read_messages=False, view_channel=False),
+                ctx.user: discord.PermissionOverwrite(read_messages=True, view_channel=True)
+            }
+            for roleId in config.STAFF_ROLE_IDS:
+                role = ctx.guild.get_role(roleId)
+                if role:
+                    overwrites[role] = discord.PermissionOverwrite(read_messages=True, view_channel=True)
+
             ticketCategory = await ctx.guild.fetch_channel(config.TICKET_CATEGORY_ID)
-            await ticketCategory.create_text_channel(name=f"{ctx.user.name}{random.randint(100000, 999999)}", topic=redeemDocument['data'])
+            await ticketCategory.create_text_channel(name=f"{ctx.user.name}{random.randint(100000, 999999)}", topic=redeemDocument['data'], overwrites=overwrites)
 
         await self.client.redeemCollection.update_one({"_id": code}, {"$inc": {"uses": -1}})
         await self.client.redeemCollection.update_one({"_id": code}, {"$push": {"claimedUsers": ctx.user.id}})

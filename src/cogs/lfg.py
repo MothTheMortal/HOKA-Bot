@@ -3,6 +3,13 @@ import discord
 from discord import app_commands, Interaction, Embed, Button, ui
 import config
 import asyncio
+from datetime import datetime, timedelta
+
+import time
+import logging
+
+logging.basicConfig(level=logging.INFO)
+
 
 class LFGCog(commands.Cog):
     def __init__(self, client):
@@ -27,12 +34,34 @@ class LFGCog(commands.Cog):
 
     @tasks.loop(seconds=60)
     async def refreshLFG(self):
-        for msg in self.active_lfg:
+        current_time = datetime.now()
+        inactive_lfg = []
+
+        for entry in self.active_lfg:
+            party_msg, voice_channel, party_leader, last_interaction_time = entry
+
+            # Check for inactivity (30 minutes)
+            if current_time - last_interaction_time > timedelta(seconds=config.PARTY_INVALIDITY_LIMIT):
+                inactive_lfg.append(entry)
+                continue
+
             try:
-                await msg.edit(attachments=[])
+                await party_msg.edit(attachments=[])
             except Exception as e:
                 print(e)
-        # print(f"Refreshed {len(self.active_lfg)} LFG Messages.")
+
+        # Handle inactive LFGs
+        for entry in inactive_lfg:
+            party_msg, voice_channel, party_leader, _ = entry
+            party_leader: discord.Member
+            await party_msg.delete()
+            if voice_channel:
+                await voice_channel.delete()
+            try:
+                await party_leader.send("Your LFG party has been deleted due to 30 minutes of inactivity.")
+            except Exception as e:
+                print("Invalidity Notice Error", e)
+            self.active_lfg.remove(entry)
 
     @tasks.loop(seconds=10)
     async def stickyPost(self):
@@ -50,7 +79,6 @@ class LFGCog(commands.Cog):
     async def lfg_post(self) -> discord.Message:
         startEmbed = Embed(title="HOKA LFG", description="Create a LFG")
         startEmbed.set_thumbnail(url=config.THUMBNAIL_URL)
-
 
         firstView = ui.View(timeout=None)
         button = ui.Button(label="Create Group", style=discord.ButtonStyle.green, emoji="<:add:1257611423358652439>")
@@ -95,7 +123,7 @@ class LFGCog(commands.Cog):
 
                     roleSet = []
 
-                    dropdown = ui.Select(placeholder="Select role", max_values=1, min_values=1, options=[discord.SelectOption(label=key, value=key) for key in config.HOK_ROLES])
+                    dropdown = ui.Select(placeholder="Select your role", max_values=1, min_values=1, options=[discord.SelectOption(label=key, value=key) for key in config.HOK_ROLES])
 
                     async def callback(ctx: Interaction):
                         userRole = dropdown.values[0]
@@ -106,8 +134,6 @@ class LFGCog(commands.Cog):
                     view.add_item(dropdown)
 
                     return await ctx.response.send_message(view=view, ephemeral=True)
-
-
 
                 dropdown2.callback = dropDownCallback
 
@@ -131,7 +157,7 @@ class LFGCog(commands.Cog):
         await ctx.response.send_message(view=view, ephemeral=True)
 
     async def partyHandler(self, ctx: Interaction, size, ranks, message, code, userRole):
-        await ctx.response.defer()
+        await ctx.response.send_message("Creating party... :timer:", ephemeral=True)
         messageContent = " ".join(["<@&" + config.HOK_RANKS_ROLE_IDS[rank] + ">" for rank in ranks])
         imgHistory = []
         partyLeader = ctx.user
@@ -139,9 +165,11 @@ class LFGCog(commands.Cog):
         userRoles = {
             ctx.user: userRole
         }
+        voiceChannel = None  # Local variable initialization
 
         party_id = f"{partyLeader.id}-{int(ctx.created_at.timestamp())}"
         self.party_locks[party_id] = asyncio.Lock()
+        last_interaction_time = datetime.now()  # Initialize last interaction time
 
         description = f""
         for user in users:
@@ -150,15 +178,21 @@ class LFGCog(commands.Cog):
         partyEmbed = Embed(title=f"(1/{size})", description=description)
         partyEmbed.set_author(name=partyLeader.name, icon_url=partyLeader.avatar.url if partyLeader.avatar else partyLeader.default_avatar)
 
+        start_time = time.time()
         imgUrl = await self.client.drawRoles(partyLeader, userRole)
+        logging.info(f"Image URL generated in {time.time() - start_time:.4f} seconds")
+
         imgHistory.append(imgUrl)
         partyEmbed.set_image(url=imgUrl)
         view = ui.View(timeout=None)
         joinButton = ui.Button(label="Join", style=discord.ButtonStyle.green)
         leaveButton = ui.Button(label="Leave", style=discord.ButtonStyle.red)
         startButton = ui.Button(label="Start", style=discord.ButtonStyle.blurple)
+        vcButton = ui.Button(label="Create VC", style=discord.ButtonStyle.grey)
 
         async def refreshEmbed(picUrl=None):
+            nonlocal last_interaction_time
+            last_interaction_time = datetime.now()  # Update last interaction time
             if "Group" in partyEmbed.title:
                 return
             description = f""
@@ -179,33 +213,74 @@ class LFGCog(commands.Cog):
             await partyMessage.edit(embed=partyEmbed)
 
         async def startCallback(ctx: Interaction):
+            nonlocal last_interaction_time
+            last_interaction_time = datetime.now()  # Update last interaction time
             async with self.party_locks[party_id]:  # Acquire the lock for this party
                 if ctx.user == partyLeader:
-                    self.active_lfg.remove(partyMessage)
+                    for x in self.active_lfg:
+                        if partyMessage in x:
+                            self.active_lfg.remove(x)
+                            break
                     partyEmbed.title = f"**Group Started** ({len(users)}/{size})"
                     return await ctx.response.edit_message(view=None, embed=partyEmbed)
                 return await ctx.response.edit_message(attachments=[])
 
         async def leaveCallback(ctx: Interaction):
+            nonlocal last_interaction_time
+            last_interaction_time = datetime.now()  # Update last interaction time
             async with self.party_locks[party_id]:  # Acquire the lock for this party
                 if ctx.user not in users:
                     return await ctx.response.edit_message(attachments=[])
                 if ctx.user == partyLeader:
-                    self.active_lfg.remove(partyMessage)
+                    await ctx.response.edit_message(attachments=[])
+                    for party in self.active_lfg:
+                        if partyMessage in party:
+                            self.active_lfg.remove(party)
+                            break
+
+                    if voiceChannel:
+                        await voiceChannel.delete()
+
                     return await partyMessage.delete()
+
+
+
+                if voiceChannel:
+                    overwrites = voiceChannel.overwrites
+                    try:
+                        overwrites.pop(ctx.user)
+                    except Exception as e:
+                        print("Overwriting Leaving Party Member Error", e)
+
+                    await voiceChannel.edit(overwrites=overwrites)
+
                 users.remove(ctx.user)
 
                 await ctx.response.edit_message(attachments=[])
                 await refreshEmbed()
 
         async def joinCallback(ctx: Interaction):
+            nonlocal last_interaction_time
+            last_interaction_time = datetime.now()  # Update last interaction time
             async with self.party_locks[party_id]:  # Acquire the lock for this party
                 if ctx.user in users or not len(users) < int(size):
                     return await ctx.response.edit_message(attachments=[])
 
+                eligible = False
+                for rank in ranks:
+                    rankRole = ctx.guild.get_role(int(config.HOK_RANKS_ROLE_IDS[rank]))
+                    if rankRole in ctx.user.roles:
+                        eligible = True
+                        break
+
+                if not eligible:
+                    return await ctx.response.send_message("You do not have the required rank role to join this party.", ephemeral=True)
+
                 roleDropdown = ui.Select(placeholder="Select Role", options=[discord.SelectOption(label=key, value=key) for key in config.HOK_ROLES])
 
                 async def roleCallback(ctx: Interaction):
+                    nonlocal last_interaction_time
+                    last_interaction_time = datetime.now()  # Update last interaction time
                     async with self.party_locks[party_id]:  # Acquire the lock for this party
                         roleSelected = roleDropdown.values[0]
                         if roleSelected in userRoles.values():
@@ -214,7 +289,14 @@ class LFGCog(commands.Cog):
                         if not len(users) < int(size):
                             return await ctx.response.send_message("The party is already full", ephemeral=True)
 
-                        await ctx.response.send_message(f"The party code is **{code}**" if code else f"You have joined the Group, Contact {partyLeader.mention} for the party code", ephemeral=True)
+                        if voiceChannel:
+                            overwrites = voiceChannel.overwrites
+                            overwrites[ctx.user] = discord.PermissionOverwrite(connect=True, view_channel=True)
+                            await voiceChannel.edit(overwrites=overwrites)
+
+                        await ctx.response.send_message(f"**Party code: {code if code else f'Contact {partyLeader.mention}'}**\n{'**VC:** ' + voiceChannel.mention if voiceChannel else ''}",
+                                                        ephemeral=True)
+
                         users.append(ctx.user)
                         userRoles[ctx.user] = roleSelected
                         await refreshEmbed(picUrl=True)
@@ -226,19 +308,43 @@ class LFGCog(commands.Cog):
 
                 await ctx.response.send_message(view=view, ephemeral=True)
 
+        async def createVcCallback(ctx: Interaction):
+            nonlocal voiceChannel, last_interaction_time
+            last_interaction_time = datetime.now()  # Update last interaction time
+            async with self.party_locks[party_id]:  # Acquire the lock for this party
+                if ctx.user != partyLeader:
+                    return await ctx.response.edit_message(attachments=[])
+
+                if voiceChannel:  # Check if voiceChannel is already set
+                    return await ctx.response.edit_message(attachments=[])
+
+                category = await ctx.guild.fetch_channel(config.PARTY_VC_CATEGORY_ID)
+
+                overwrites = {
+                    ctx.guild.default_role: discord.PermissionOverwrite(connect=False, view_channel=False),
+                }
+
+                for user in users:
+                    overwrites[user] = discord.PermissionOverwrite(connect=True, view_channel=True)
+
+                voiceChannel = await category.create_voice_channel(name=f"{partyLeader.name}'s Party VC", user_limit=int(size), overwrites=overwrites)
+
+                await ctx.response.send_message(f"Voice Channel has been created: {voiceChannel.mention}", ephemeral=True)
+
         joinButton.callback = joinCallback
         leaveButton.callback = leaveCallback
         startButton.callback = startCallback
+        vcButton.callback = createVcCallback
 
         view.add_item(joinButton)
         view.add_item(leaveButton)
         view.add_item(startButton)
+        view.add_item(vcButton)
 
         lfgChannel: discord.TextChannel = ctx.guild.get_channel(config.LFG_MSG_CHANNEL_ID)
         partyMessage = await lfgChannel.send(content=f"**{message}**" if message else "" + "\n" + messageContent, embed=partyEmbed, view=view)
+        self.active_lfg.append((partyMessage, voiceChannel, partyLeader, last_interaction_time))  # Store the party message, voice channel, party leader, and last interaction time
         await ctx.edit_original_response(content=F"**LFG Created** {partyMessage.jump_url}", view=None)
-        self.active_lfg.append(partyMessage)
-
 
 
 async def setup(client):

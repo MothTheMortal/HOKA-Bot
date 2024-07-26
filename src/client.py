@@ -8,7 +8,8 @@ import requests
 import motor.motor_asyncio
 import string
 import random
-
+from PIL import Image, ImageDraw
+import logging
 
 class HOKABot(commands.Bot):
     def __init__(self, *args, **kwargs):
@@ -18,6 +19,7 @@ class HOKABot(commands.Bot):
         self.usersCollection = self.database["users"]
         self.inviteCollection = self.database["invites"]
         self.redeemCollection = self.database["redeems"]
+
     async def on_ready(self):
         print(f"Logged in as {self.user}")
 
@@ -79,11 +81,16 @@ class HOKABot(commands.Bot):
 
         return message.attachments[0].url
 
-    async def drawRoles(self, user: discord.Member, role, bannerUrl: str = config.TEAM_URL) -> None:
-        banner_response = requests.get(bannerUrl)
-        banner_response.raise_for_status()
-        banner = Image.open(io.BytesIO(banner_response.content))
 
+    async def drawRoles(self, user: discord.Member, role, bannerUrl: str = None) -> None:
+        if not bannerUrl:
+            banner = Image.open("1035x460.png")
+        else:
+            banner_response = requests.get(bannerUrl)
+            banner_response.raise_for_status()
+            banner = Image.open(io.BytesIO(banner_response.content))
+
+        # Download the user's profile picture
         if user.avatar:
             pfpUrl = user.avatar.url
         else:
@@ -91,28 +98,34 @@ class HOKABot(commands.Bot):
 
         pfp_response = requests.get(pfpUrl)
         pfp_response.raise_for_status()
-
         pfp = Image.open(io.BytesIO(pfp_response.content))
 
+        # Resize the profile picture
         pfp = pfp.resize((90, 90))
 
+        # Create a mask and apply it to the profile picture
         mask = Image.new('L', pfp.size, 0)
         draw = ImageDraw.Draw(mask)
         draw.ellipse((0, 0) + pfp.size, fill=255)
         pfp.putalpha(mask)
 
+        # Get the coordinates for the role
         icon_x, icon_y = config.COORDS[role]
 
+        # Calculate the paste location
         paste_location = (icon_x - pfp.width // 2, icon_y - pfp.height // 2)
         if pfp.mode in ('RGBA', 'LA') or (pfp.mode == 'P' and 'transparency' in pfp.info):
             banner.paste(pfp, paste_location, pfp)
         else:
             banner.paste(pfp, paste_location)
 
+        # Save the final image to a BytesIO object
         bannerData = io.BytesIO()
         banner.save(bannerData, format="PNG")
         bannerData.seek(0)
+
         return await self.uploadFile(bannerData)
+
 
     async def generate_code(self, length=12) -> str:
         characters = string.ascii_letters + string.digits
