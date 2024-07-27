@@ -11,6 +11,7 @@ import random
 from PIL import Image, ImageDraw
 import logging
 
+
 class HOKABot(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

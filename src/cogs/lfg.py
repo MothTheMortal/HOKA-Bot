@@ -4,7 +4,6 @@ from discord import app_commands, Interaction, Embed, Button, ui
 import config
 import asyncio
 from datetime import datetime, timedelta
-
 import time
 import logging
 
@@ -15,12 +14,14 @@ class LFGCog(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.active_lfg = []
+        self.post_vc = []
         self.post: discord.Message = None
         self.party_locks = {}
 
     @commands.Cog.listener()
     async def on_ready(self):
         self.refreshLFG.start()
+        self.voiceHandler.start()
 
         channel: discord.TextChannel = self.client.get_channel(config.LFG_POST_CHANNEL_ID)
         last50Msg = channel.history(limit=50)
@@ -38,7 +39,7 @@ class LFGCog(commands.Cog):
         inactive_lfg = []
 
         for entry in self.active_lfg:
-            party_msg, voice_channel, party_leader, last_interaction_time = entry
+            party_msg, voice_channel, party_leader, last_interaction_time, _ = entry
 
             # Check for inactivity (30 minutes)
             if current_time - last_interaction_time > timedelta(seconds=config.PARTY_INVALIDITY_LIMIT):
@@ -52,7 +53,7 @@ class LFGCog(commands.Cog):
 
         # Handle inactive LFGs
         for entry in inactive_lfg:
-            party_msg, voice_channel, party_leader, _ = entry
+            party_msg, voice_channel, party_leader, _, _ = entry
             party_leader: discord.Member
             await party_msg.delete()
             if voice_channel:
@@ -62,6 +63,22 @@ class LFGCog(commands.Cog):
             except Exception as e:
                 print("Invalidity Notice Error", e)
             self.active_lfg.remove(entry)
+
+    @tasks.loop(seconds=60)
+    async def voiceHandler(self):
+        current_time = datetime.now()
+        inactive_vcs = []
+
+        for vc, last_active_time in self.post_vc:
+            if len(vc.members) == 0 and (current_time - last_active_time).total_seconds() > config.VC_INVALIDITY_LIMIT:  # 30 minutes
+                inactive_vcs.append((vc, last_active_time))
+
+        for vc, _ in inactive_vcs:
+            try:
+                await vc.delete()
+            except Exception as e:
+                logging.error(f"Error deleting voice channel {vc.id}: {e}")
+            self.post_vc.remove((vc, _))
 
     @tasks.loop(seconds=10)
     async def stickyPost(self):
@@ -84,6 +101,11 @@ class LFGCog(commands.Cog):
         button = ui.Button(label="Create Group", style=discord.ButtonStyle.green, emoji="<:add:1257611423358652439>")
 
         async def buttonCallBack(ctx: Interaction):
+
+            for party in self.active_lfg:
+                if ctx.user in party:
+                    return await ctx.response.send_message(f"You already have an active party: {party[0].jump_url}", ephemeral=True)
+
             return await self.lfg(ctx)
 
         button.callback = buttonCallBack
@@ -222,6 +244,10 @@ class LFGCog(commands.Cog):
                             self.active_lfg.remove(x)
                             break
                     partyEmbed.title = f"**Group Started** ({len(users)}/{size})"
+
+                    if voiceChannel:
+                        self.post_vc.append((voiceChannel, datetime.now()))
+
                     return await ctx.response.edit_message(view=None, embed=partyEmbed)
                 return await ctx.response.edit_message(attachments=[])
 
@@ -265,6 +291,11 @@ class LFGCog(commands.Cog):
             async with self.party_locks[party_id]:  # Acquire the lock for this party
                 if ctx.user in users or not len(users) < int(size):
                     return await ctx.response.edit_message(attachments=[])
+
+                for party in self.active_lfg:
+                    if ctx.user in party[4]:
+                        return await ctx.response.send_message("You are already in an active party.", ephemeral=True)
+
 
                 eligible = False
                 for rank in ranks:
@@ -329,6 +360,10 @@ class LFGCog(commands.Cog):
 
                 voiceChannel = await category.create_voice_channel(name=f"{partyLeader.name}'s Party VC", user_limit=int(size), overwrites=overwrites)
 
+                for user in users:
+                    if user != partyLeader:
+                        await user.send(content=f"A voice channel has been created for your party: {voiceChannel.mention}")
+
                 await ctx.response.send_message(f"Voice Channel has been created: {voiceChannel.mention}", ephemeral=True)
 
         joinButton.callback = joinCallback
@@ -343,7 +378,7 @@ class LFGCog(commands.Cog):
 
         lfgChannel: discord.TextChannel = ctx.guild.get_channel(config.LFG_MSG_CHANNEL_ID)
         partyMessage = await lfgChannel.send(content=f"**{message}**" if message else "" + "\n" + messageContent, embed=partyEmbed, view=view)
-        self.active_lfg.append((partyMessage, voiceChannel, partyLeader, last_interaction_time))  # Store the party message, voice channel, party leader, and last interaction time
+        self.active_lfg.append((partyMessage, voiceChannel, partyLeader, last_interaction_time, users))  # Store the party message, voice channel, party leader, last interaction time and users
         await ctx.edit_original_response(content=F"**LFG Created** {partyMessage.jump_url}", view=None)
 
 
