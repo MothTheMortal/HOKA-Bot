@@ -10,6 +10,7 @@ import string
 import random
 from PIL import Image, ImageDraw
 import logging
+import math
 
 
 class HOKABot(commands.Bot):
@@ -82,10 +83,19 @@ class HOKABot(commands.Bot):
 
         return message.attachments[0].url
 
+    async def getLevelLeaderboardIndex(self, user):
+        collection = self.usersCollection
+        users_data = await collection.find().to_list(length=None)
+
+        lb_data = sorted(users_data, key=lambda x: x["exp"], reverse=True)
+
+        index = next((i for i, user_data in enumerate(lb_data) if user_data["_id"] == user.id), -1)
+
+        return str(index + 1)
 
     async def drawRoles(self, user: discord.Member, role, bannerUrl: str = None) -> None:
         if not bannerUrl:
-            banner = Image.open("1035x460.png")
+            banner = Image.open("data/1035x460.png")
         else:
             banner_response = requests.get(bannerUrl)
             banner_response.raise_for_status()
@@ -181,5 +191,5 @@ class HOKABot(commands.Bot):
         current_level_exp = config.expRequired[str(level)]
         next_level_exp = config.expRequired[str(level + 1)]
 
-        progress = (exp - current_level_exp) / (next_level_exp - current_level_exp) * 100
+        progress = current_level_exp / next_level_exp * 100
         return level, progress

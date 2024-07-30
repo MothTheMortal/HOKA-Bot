@@ -3,6 +3,7 @@ from discord import app_commands
 import discord
 import config
 from datetime import datetime, timedelta
+import io
 
 
 class XPCog(commands.Cog):
@@ -48,19 +49,18 @@ class XPCog(commands.Cog):
 
     @app_commands.command(name="level", description="Check your level.")
     async def level(self, ctx: discord.Interaction, user: discord.Member = None):
-
+        await ctx.response.defer()
         if user is None:
             user = ctx.user
 
         userDoc = await self.client.userDocument(user)
 
-        embed = discord.Embed(title=f"{user.name}'s Level", color=discord.Colour.blurple())
-
         user_level, user_progress = self.client.calculate_level(userDoc["exp"])
-
-        embed.add_field(name="Level:", value=f"{user_level} ({user_progress:.0f}%)")
-
-        await ctx.response.send_message(embed=embed)
+        pfpData = io.BytesIO()
+        await user.avatar.save(pfpData)
+        pfpData.seek(0)
+        iofile = config.createLevelImage(name=user.name, status=user.status, rank= await self.client.getLevelLeaderboardIndex(user), level=user_level, percent=user_progress, expMin=userDoc['exp'], expMax=config.expRequired[str(user_level + 1)], pfpData=pfpData)
+        await ctx.followup.send(file=discord.File(fp=iofile, filename="userlevel.png"))
 
     @app_commands.command(name="leaderboard_level", description="View the level leaderboard.")
     async def leaderboard_level(self, ctx: discord.Interaction, places: int = 10, target_user: discord.Member = None):
