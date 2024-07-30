@@ -95,7 +95,7 @@ class HOKABot(commands.Bot):
 
     async def drawRoles(self, user: discord.Member, role, bannerUrl: str = None) -> None:
         if not bannerUrl:
-            banner = Image.open("data/1035x460.png")
+            banner = Image.open("1035x460.png")
         else:
             banner_response = requests.get(bannerUrl)
             banner_response.raise_for_status()
