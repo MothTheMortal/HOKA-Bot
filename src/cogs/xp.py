@@ -36,7 +36,6 @@ class XPCog(commands.Cog):
 
         modified_exp = config.EXP_RATE * max_modifier
 
-
         await self.client.usersCollection.update_one({"_id": message.author.id}, {"$inc": {"exp": modified_exp}})
         self.last_message_times[user_id] = current_time
 
@@ -45,7 +44,6 @@ class XPCog(commands.Cog):
 
         if new_level > old_level:
             await self.client.levelUpHandler(message.author, old_level, new_level, message.channel)
-
 
     @app_commands.command(name="level", description="Check your level.")
     async def level(self, ctx: discord.Interaction, user: discord.Member = None):
@@ -59,7 +57,8 @@ class XPCog(commands.Cog):
         pfpData = io.BytesIO()
         await user.avatar.save(pfpData)
         pfpData.seek(0)
-        iofile = config.createLevelImage(name=user.name, status=user.status, rank= await self.client.getLevelLeaderboardIndex(user), level=user_level, percent=user_progress, expMin=userDoc['exp'], expMax=config.expRequired[str(user_level + 1)], pfpData=pfpData)
+        iofile = config.createLevelImage(name=user.name, status=str(user.status), rank=await self.client.getLevelLeaderboardIndex(user), level=user_level, percent=user_progress, expMin=userDoc['exp'],
+                                         expMax=config.expRequired[str(user_level + 1)], pfpData=pfpData)
         await ctx.followup.send(file=discord.File(fp=iofile, filename="userlevel.png"))
 
     @app_commands.command(name="leaderboard_level", description="View the level leaderboard.")
@@ -74,7 +73,6 @@ class XPCog(commands.Cog):
             return await ctx.response.send_message("The leaderboard can only show up to 21 people.", ephemeral=True)
 
         await ctx.response.defer()
-
 
         # Query the database to get the user data
         collection = self.client.usersCollection
@@ -131,4 +129,3 @@ class XPCog(commands.Cog):
 
 async def setup(client):
     await client.add_cog(XPCog(client))
-
