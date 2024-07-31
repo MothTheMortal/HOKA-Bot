@@ -67,6 +67,19 @@ class XPCog(commands.Cog):
                                          expMax=expMax, pfpData=pfpData)
         await ctx.followup.send(file=discord.File(fp=iofile, filename="userlevel.png"))
 
+    @app_commands.command(name="set-level", description="Set a user's level.")
+    async def set_level(self, ctx: discord.Interaction, user: discord.Member, level: int):
+        if not self.client.isStaff(ctx.user) and ctx.user.id != self.client.owner_id:
+            return await self.client.userNotStaffError(ctx)
+
+        if level <= 0 or level > 100:
+            return await ctx.response.send_message("Level must be between 1 and 100.", ephemeral=True)
+
+
+        await self.client.usersCollection.update_one({"_id": user.id}, {"$set": {"exp": config.expRequired[str(level)]}})
+        await ctx.response.send_message(f"Set {user.mention}'s level to {level}.", ephemeral=True)
+
+
     @app_commands.command(name="leaderboard_level", description="View the level leaderboard.")
     async def leaderboard_level(self, ctx: discord.Interaction, places: int = 10, target_user: discord.Member = None):
 
