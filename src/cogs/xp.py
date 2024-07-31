@@ -54,11 +54,15 @@ class XPCog(commands.Cog):
         userDoc = await self.client.userDocument(user)
 
         user_level, user_progress = self.client.calculate_level(userDoc["exp"])
+        if user_level == 100:
+            expMax = 0
+        else:
+            expMax = config.expRequired[str(user_level + 1)]
         pfpData = io.BytesIO()
         await user.avatar.save(pfpData)
         pfpData.seek(0)
         iofile = config.createLevelImage(name=user.name, status=str(user.status), rank=await self.client.getLevelLeaderboardIndex(user), level=user_level, percent=user_progress, expMin=userDoc['exp'],
-                                         expMax=config.expRequired[str(user_level + 1)], pfpData=pfpData)
+                                         expMax=expMax, pfpData=pfpData)
         await ctx.followup.send(file=discord.File(fp=iofile, filename="userlevel.png"))
 
     @app_commands.command(name="leaderboard_level", description="View the level leaderboard.")
