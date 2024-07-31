@@ -185,7 +185,7 @@ class HOKABot(commands.Bot):
             else:
                 break
 
-        if level == 50:
+        if level == 100:
             return level, 100.0
 
         current_level_exp = config.expRequired[str(level)]
