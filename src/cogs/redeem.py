@@ -50,7 +50,7 @@ class RedeemCog(commands.Cog):
             data = channel_title
             logMsg = f"**Ticket:** {channel_title}"
 
-        await ctx.followup.send(f"**Created Redeem Code:**\n**Code:** `{code}`\n**Action:** {action.name}", ephemeral=True)
+        await ctx.followup.send(f"**Created Redeem Code:**\n**Code:** ```{code}```\n**Action:** {action.name}", ephemeral=True)
 
         await self.client.createRedeemDocument(code, action.value, uses, ctx.user, data)
 
@@ -152,7 +152,7 @@ class RedeemCog(commands.Cog):
 
         text = ""
         for doc in codes:
-            text += f"**Code:** `{doc['_id']}`\n**Action:** {doc['actionType']}\n**Uses:** {doc['uses']}\n\n"
+            text += f"**Code:** ```{doc['_id']}```\n**Action:** {doc['actionType']}\n**Uses:** {doc['uses']}\n\n"
         await ctx.response.send_message(text, ephemeral=True)
 
 
