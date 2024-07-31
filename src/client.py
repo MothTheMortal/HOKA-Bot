@@ -184,7 +184,7 @@ class HOKABot(commands.Bot):
                 level = int(lvl)
             else:
                 break
-        print(level)
+
         if level == 100:
             return level, 100.0
 
