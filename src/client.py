@@ -138,7 +138,7 @@ class HOKABot(commands.Bot):
         return await self.uploadFile(bannerData)
 
 
-    async def generate_code(self, length=12) -> str:
+    async def generate_code(self, length=6) -> str:
         characters = string.ascii_letters + string.digits
         code = ''.join(random.choice(characters) for _ in range(length))
         while await self.redeemCollection.find_one({"_id": code}):
