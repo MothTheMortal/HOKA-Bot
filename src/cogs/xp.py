@@ -46,9 +46,10 @@ class XPCog(commands.Cog):
                 return
 
         max_modifier = 1.0
-        for role in message.author.roles:
-            if role.id in config.EXP_MODIFIER_ROLE_IDS:
-                max_modifier = max(max_modifier, config.EXP_MODIFIER_ROLE_IDS[role.id])
+        if isinstance(message.author, discord.Member):
+            for role in message.author.roles:
+                if role.id in config.EXP_MODIFIER_ROLE_IDS:
+                    max_modifier = max(max_modifier, config.EXP_MODIFIER_ROLE_IDS[role.id])
 
         modified_exp = config.EXP_RATE * max_modifier
 
