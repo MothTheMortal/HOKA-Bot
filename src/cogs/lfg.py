@@ -360,6 +360,7 @@ class LFGCog(commands.Cog):
             nonlocal voiceChannel, last_interaction_time
             last_interaction_time = datetime.now()  # Update last interaction time
             async with self.party_locks[party_id]:  # Acquire the lock for this party
+
                 if ctx.user != partyLeader:
                     return await ctx.response.edit_message(attachments=[])
 

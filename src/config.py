@@ -182,10 +182,11 @@ TICKET_CATEGORY_ID = 1268485290989846548  # Category ID where ticket channels wi
 # EXP & Leveling
 EXP_RATE = 9  # Exp per MSG
 EXP_DELAY = 30  # How many seconds before letting user earn xp again
-BANNED_EXP_CHANNEL_IDS = []  # Channels that will not give users EXP
+BANNED_EXP_CHANNEL_IDS = [1222469445017141308, 1213025549589422110, 1213019534467010592, 1253140906966646855]  # Channels that will not give users EXP
 EXP_MODIFIER_ROLE_IDS = {
     #  Role ID: Modifier
     # 1253221573465346100 : 1.5 -> Means that this role's user will get 1.5x the EXP
+    1268505481731641388: 2.5
 }
 ASSIGN_ROLE_ON_LEVEL_UP = {
     #  Level - Role ID
