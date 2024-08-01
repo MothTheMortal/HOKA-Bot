@@ -131,53 +131,53 @@ color_scheme = {  # Color Scheme for the level boxes
 
 # Modify values below!
 
-STAFF_ROLE_IDS = [1253221573465346100]
-DATABASE_NAME = 'HOKA'
+STAFF_ROLE_IDS = [1253290795419701318, 1268487593620672563]
+DATABASE_NAME = 'HOKAOfficial'
 
 # LFG
-HOK_RANKS = {"Bronze": "<:bronze:1255772551322402857>", "Silver": "<:rank_2_silver:1255773186667319347>", "Gold": "<:rank_3_gold:1255773184620363796>",
-             "Platinum": "<:rank_4_platinum:1255773181696807004>", "Diamond": "<:rank_5_diamond:1255773180094844938>", "Master": "<:rank_6_master:1255773177531859006>",
-             "Grandmaster": "<:rank_7_grandmaster:1255773175749283912>",
-             "Mythic Grandmaster": "<:rank_7_grandmaster:1255773175749283912>",
-             "Epic Grandmaster": "<:epicgrandmaster:1268462905511252068>",
-             "Legend Grandmaster": "<:epicgrandmaster:1268462905511252068>",
+HOK_RANKS = {"Bronze": "<:H1_Bronze:1213470531500900424>", "Silver": "<:H2_Silver:1213470523409834065>", "Gold": "<:H3_Gold:1213470503285686372>",
+             "Platinum": "<:H4_Platinum:1213470517911224340>", "Diamond": "<:H5_Diamond:1213470498005192716>", "Master": "<:H6_Master:1213470512219689000>",
+             "Grandmaster": "<:H7_SuperKing:1213470527495086091>",
+             "Mythic Grandmaster": "<:H7_SuperKing:1213470527495086091>",
+             "Epic Grandmaster": "<:H8_KingOfGlory:1213470507136188466>",
+             "Legend Grandmaster": "<:H8_KingOfGlory:1213470507136188466>",
              }
 
 HOK_RANKS_ROLE_IDS = {  # Rank: Rank Role ID
-    'Bronze': '1256128781266063452',
-    'Silver': '1256128782759366770',
-    'Gold': '1256128784093155369',
-    'Platinum': '1256128785644916809',
-    'Diamond': '1256128787221839944',
-    'Master': '1256128788685656154',
-    'Grandmaster': '1256128790132686858',
-    'Mythic Grandmaster': '1256128790132686858',
-    'Epic Grandmaster': '1256128790132686858',
-    'Legend Grandmaster': '1256128790132686858',
+    'Bronze': '1213470577919004704',
+    'Silver': '1213470615059697734',
+    'Gold': '1213470637968990268',
+    'Platinum': '1213470796899688479',
+    'Diamond': '1213470826259808296',
+    'Master': '1213470849152323604',
+    'Grandmaster': '1213470880139845643',
+    'Mythic Grandmaster': '1237796228545118299',
+    'Epic Grandmaster': '1213470903401316392',
+    'Legend Grandmaster': '1237796346484887562',
 }
 
-PARTY_VC_CATEGORY_ID = 1266283672030416906
+PARTY_VC_CATEGORY_ID = 1268482848202035231
 PARTY_INVALIDITY_LIMIT = 30 * 60  # Seconds
 VC_INVALIDITY_LIMIT = 10 * 60  # Seconds
 
 # URL for the thumbnail that will appear on the LFG Embed
 DEV_GUILD_ID = 1248544817357787168
 LFG_REMINDER_SECONDS = 60 * 5
-LFG_POST_CHANNEL_ID = 1258347247117008947
-LFG_MSG_CHANNEL_ID = 1266305363897094184
-STORAGE_ID = 1257950603649486905
+LFG_POST_CHANNEL_ID = 1265568271151661087
+LFG_MSG_CHANNEL_ID = 1265568785046442067
+STORAGE_ID = 1268483327640342569
 
 
 # Invites
-INVITE_LINK_CHANNEL_ID = 1248544817806315585  # Channel ID where invited users will be first sent (like #annoucement or #general)
+INVITE_LINK_CHANNEL_ID = 1265496104141586582  # Channel ID where invited users will be first sent (like #annoucement or #general)
 levelsToCheckInvite = {  # Levels that will be displayed on /invites
     # Level - level Role ID
     10: 1261984637375352000
 }
 
 # Redeem Codes
-REDEEM_LOG_CHANNEL_ID = 1262646876038103182  # Channel ID where logs for redeem codes will be sent
-TICKET_CATEGORY_ID = 1264083281369104414  # Category ID where ticket channels will be created
+REDEEM_LOG_CHANNEL_ID = 1234059151743914004  # Channel ID where logs for redeem codes will be sent
+TICKET_CATEGORY_ID = 1268485290989846548  # Category ID where ticket channels will be created
 
 # EXP & Leveling
 EXP_RATE = 9  # Exp per MSG
@@ -186,14 +186,23 @@ BANNED_EXP_CHANNEL_IDS = []  # Channels that will not give users EXP
 EXP_MODIFIER_ROLE_IDS = {
     #  Role ID: Modifier
     # 1253221573465346100 : 1.5 -> Means that this role's user will get 1.5x the EXP
-    1253221573465346100: 1.5
 }
 ASSIGN_ROLE_ON_LEVEL_UP = {
     #  Level - Role ID
-    10: 1261984637375352872,
-    5: 1268470471272431649,
-    15: 1268470401730740277
+    5: 1268450978533867571,
+    10: 1268450825668132957,
+    15: 1268450660811276401,
+    20: 1268449781383172218,
+    30: 1268449642870214665,
+    40: 1268449467372142693,
+    50: 1268449299444793436,
+    60: 1268448642033913876,
+    70: 1268448494138691676,
+    80: 1268448079892451352,
+    90: 1268447864913264723,
+    100: 1268447195984691281
 }
+
 
 LEVEL_UP_MSG = "Congratulations {user}, you have reached level **{newLevel}** from level **{oldLevel}**!"
 

@@ -23,6 +23,7 @@ class HOKABot(commands.Bot):
         self.redeemCollection = self.database["redeems"]
 
     async def on_ready(self):
+        await self.tree.sync()
         print(f"Logged in as {self.user}")
 
     async def setup_hook(self):
@@ -71,7 +72,7 @@ class HOKABot(commands.Bot):
 
         doc = {
             "_id": user,
-            "exp": 0,
+            "exp": 1,
         }
         await self.usersCollection.insert_one(doc)
 

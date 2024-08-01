@@ -123,6 +123,20 @@ class LFGCog(commands.Cog):
         async def dropDownCallback(ctx: Interaction):
             if not dropdown.values:
                 return await ctx.response.send_message("Please select a rank", ephemeral=True)
+
+            hasRank = False
+
+            for rankNames in dropdown.values:
+                roleId = config.HOK_RANKS_ROLE_IDS[rankNames]
+                role = ctx.guild.get_role(roleId)
+
+                if role in ctx.user.roles:
+                    hasRank = True
+                    break
+
+            if not hasRank:
+                return await ctx.response.send_message("You don't have the required rank. Please select them in Channels & Roles", ephemeral=True)
+
             ranks = dropdown.values
             modal = ui.Modal(title="Lobby Details", timeout=None)
             lobbyTextInput = ui.TextInput(label="Enter a message for your LFG", placeholder="Example: mic only", style=discord.TextStyle.short, required=False)
@@ -149,7 +163,6 @@ class LFGCog(commands.Cog):
 
                     async def callback(ctx: Interaction):
                         userRole = dropdown.values[0]
-
                         return await self.partyHandler(ctx, size, ranks, lobbyTextInput.value, lobbyCodeInput.value, userRole)
 
                     dropdown.callback = callback
@@ -309,7 +322,7 @@ class LFGCog(commands.Cog):
                         break
 
                 if not eligible:
-                    return await ctx.response.send_message("You do not have the required rank role to join this party.", ephemeral=True)
+                    return await ctx.response.send_message("You do not have the required rank role to join this party. Please select them in Channels & Roles", ephemeral=True)
 
                 roleDropdown = ui.Select(placeholder="Select Role", options=[discord.SelectOption(label=key, value=key) for key in config.HOK_ROLES])
 
