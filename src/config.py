@@ -199,16 +199,16 @@ LEVEL_UP_MSG = "Congratulations {user}, you have reached level **{newLevel}** fr
 
 
 def mainFont(size):
-    return ImageFont.truetype("data/mainfont.otf", size)
+    return ImageFont.truetype("mainfont.otf", size)
 
 
 def nameFont(size):
-    return ImageFont.truetype("data/namefont.ttf", size)
+    return ImageFont.truetype("namefont.ttf", size)
 
 
 def fontSizeFilter(text, size=35, max_length=486):
     # Load the font
-    font = ImageFont.truetype("data/namefont.ttf", size)
+    font = ImageFont.truetype("namefont.ttf", size)
 
     # Create a dummy image to get a drawing context
     dummy_image = Image.new("RGB", (1, 1))
@@ -416,7 +416,7 @@ def numFormat(num):
 
 
 def expLine(expMin, expMax, image):
-    img = Image.open("data/img.png")
+    img = Image.open("img.png")
     draw = ImageDraw.Draw(image)
 
     draw.text((820, 237), fill="#295372", font=mainFont(25), text=f"{numFormat(expMin)}/{numFormat(expMax)}")
