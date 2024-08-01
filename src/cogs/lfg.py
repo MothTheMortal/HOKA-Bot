@@ -124,18 +124,18 @@ class LFGCog(commands.Cog):
             if not dropdown.values:
                 return await ctx.response.send_message("Please select a rank", ephemeral=True)
 
-            hasRank = False
-
-            for rankNames in dropdown.values:
-                roleId = config.HOK_RANKS_ROLE_IDS[rankNames]
-                role = ctx.guild.get_role(roleId)
-
-                if role in ctx.user.roles:
-                    hasRank = True
-                    break
-
-            if not hasRank:
-                return await ctx.response.send_message("You don't have the required rank. Please select them in Channels & Roles", ephemeral=True)
+            # hasRank = False
+            #
+            # for rankNames in dropdown.values:
+            #     roleId = config.HOK_RANKS_ROLE_IDS[rankNames]
+            #     role = ctx.guild.get_role(roleId)
+            #
+            #     if role in ctx.user.roles:
+            #         hasRank = True
+            #         break
+            #
+            # if not hasRank:
+            #     return await ctx.response.send_message("You don't have the required rank. Please select them in Channels & Roles", ephemeral=True)
 
             ranks = dropdown.values
             modal = ui.Modal(title="Lobby Details", timeout=None)
