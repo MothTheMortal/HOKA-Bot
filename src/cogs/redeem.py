@@ -109,8 +109,7 @@ class RedeemCog(commands.Cog):
 
             old_level, _ = self.client.calculate_level(user_doc["exp"])
             new_level, _ = self.client.calculate_level(user_doc["exp"] + int(redeemDocument['data']))
-
-            if new_level > old_level:
+            if old_level != new_level:
                 await self.client.levelUpHandler(ctx.user, old_level, new_level, ctx.channel)
 
 

@@ -118,7 +118,7 @@ class LFGCog(commands.Cog):
 
     async def lfg(self, ctx: Interaction):
         view = ui.View(timeout=None)
-        dropdown = ui.Select(placeholder="Select rank(s)", options=[discord.SelectOption(label=key, value=key, emoji=value) for key, value in config.HOK_RANKS.items()], max_values=2)
+        dropdown = ui.Select(placeholder="Select rank(s)", options=[discord.SelectOption(label=key, value=key, emoji=value) for key, value in config.HOK_RANKS.items()], max_values=3)
 
         async def dropDownCallback(ctx: Interaction):
             if not dropdown.values:
@@ -181,6 +181,10 @@ class LFGCog(commands.Cog):
     async def partyHandler(self, ctx: Interaction, size, ranks, message, code, userRole):
         await ctx.response.send_message("Creating party... :timer:", ephemeral=True)
         messageContent = " ".join(["<@&" + config.HOK_RANKS_ROLE_IDS[rank] + ">" for rank in ranks])
+
+        if message:
+            message += "\n"
+
         imgHistory = []
         partyLeader = ctx.user
         users = [partyLeader]
@@ -377,7 +381,7 @@ class LFGCog(commands.Cog):
         view.add_item(vcButton)
 
         lfgChannel: discord.TextChannel = ctx.guild.get_channel(config.LFG_MSG_CHANNEL_ID)
-        partyMessage = await lfgChannel.send(content=f"**{message}**" if message else "" + "\n" + messageContent, embed=partyEmbed, view=view)
+        partyMessage = await lfgChannel.send(content=f"**{message}{messageContent}**", embed=partyEmbed, view=view)
         self.active_lfg.append((partyMessage, voiceChannel, partyLeader, last_interaction_time, users))  # Store the party message, voice channel, party leader, last interaction time and users
         await ctx.edit_original_response(content=F"**LFG Created** {partyMessage.jump_url}", view=None)
 

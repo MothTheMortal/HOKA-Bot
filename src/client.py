@@ -17,7 +17,7 @@ class HOKABot(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.databaseClient = client = motor.motor_asyncio.AsyncIOMotorClient(kwargs['mongodb_uri'])
-        self.database = self.databaseClient["HOKA"]
+        self.database = self.databaseClient[config.DATABASE_NAME]
         self.usersCollection = self.database["users"]
         self.inviteCollection = self.database["invites"]
         self.redeemCollection = self.database["redeems"]
@@ -95,7 +95,7 @@ class HOKABot(commands.Bot):
 
     async def drawRoles(self, user: discord.Member, role, bannerUrl: str = None) -> None:
         if not bannerUrl:
-            banner = Image.open("1035x460.png")
+            banner = Image.open("data/1035x460.png")
         else:
             banner_response = requests.get(bannerUrl)
             banner_response.raise_for_status()
@@ -147,14 +147,45 @@ class HOKABot(commands.Bot):
 
     @staticmethod
     async def levelUpHandler(user: discord.Member, oldLevel, newLevel, channel):
-        if config.ASSIGN_ROLE_ON_LEVEL_UP.get(newLevel):
-            role = user.guild.get_role(config.ASSIGN_ROLE_ON_LEVEL_UP.get(newLevel))
-            await user.add_roles(role)
+        if oldLevel > newLevel:
+            for level, roleId in config.ASSIGN_ROLE_ON_LEVEL_UP.items():
+                if newLevel < level:
+                    role = user.guild.get_role(roleId)
+                    try:
+                        await user.remove_roles(role)
+                    except:
+                        pass
+        else:
+            if newLevel - oldLevel // 5 > 1:
+                levels = config.ASSIGN_ROLE_ON_LEVEL_UP.keys()
+                smallerLevels = [level for level in levels if level <= newLevel]
+
+                for level in smallerLevels:
+                    role = user.guild.get_role(config.ASSIGN_ROLE_ON_LEVEL_UP.get(level))
+                    try:
+                        await user.add_roles(role)
+                    except:
+                        pass
+            else:
+                levels = config.ASSIGN_ROLE_ON_LEVEL_UP.keys()
+                try:
+                    maxSmallerLevel = max([level for level in levels if level <= newLevel])
+                    role = user.guild.get_role(config.ASSIGN_ROLE_ON_LEVEL_UP.get(maxSmallerLevel))
+
+                    try:
+                        await user.add_roles(role)
+                    except:
+                        pass
+                except:
+                    pass
+
+
+
 
         await channel.send(config.LEVEL_UP_MSG.format(
-                user=user.mention,
-                newLevel=newLevel,
-                oldLevel=oldLevel)
+            user=user.mention,
+            newLevel=newLevel,
+            oldLevel=oldLevel)
         )
 
     @staticmethod
@@ -191,5 +222,5 @@ class HOKABot(commands.Bot):
         current_level_exp = config.expRequired[str(level)]
         next_level_exp = config.expRequired[str(level + 1)]
 
-        progress = current_level_exp / next_level_exp * 100
+        progress = (exp - current_level_exp) / (next_level_exp - current_level_exp) * 100
         return level, progress

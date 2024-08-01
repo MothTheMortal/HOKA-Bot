@@ -33,7 +33,6 @@ class InvitesCog(commands.Cog):
                 break
 
         if inviteUrl:
-            print(member.name, inviteUrl)
             await self.client.inviteCollection.update_one({"inviteLink": inviteUrl}, {"$push": {"invitedUsers": member.id}})
 
         self.invites[member.guild.id] = afterInvites
@@ -74,6 +73,66 @@ class InvitesCog(commands.Cog):
         inviteEmbed = discord.Embed(title="Invite Tracker", description=description)
 
         await ctx.followup.send(embed=inviteEmbed)
+
+
+    @app_commands.command(name="invites-leaderboard", description="View the top 10 inviters.")
+    async def invites_leaderboard(self, ctx: Interaction, places: int = 10, target_user: discord.Member = None):
+
+        if target_user:
+            user = target_user
+        else:
+            user = ctx.user
+
+        if places > 21:
+            return await ctx.response.send_message("The leaderboard can only show up to 21 people.", ephemeral=True)
+
+        if places < 3:
+            return await ctx.response.send_message("The leaderboard needs to show at least 3 people.", ephemeral=True)
+
+        await ctx.response.defer()
+
+        collection = self.client.inviteCollection
+        users_data = await collection.find().to_list(length=None)
+
+        lb_data = sorted(users_data, key=lambda x: len(x["invitedUsers"]), reverse=True)
+
+        leaderboard_embed = discord.Embed(
+            title="Leveling Leaderboard",
+            description=f"The top {places} inviters in {ctx.guild.name}!",
+            color=discord.Colour.gold()
+        )
+
+        index = next((i for i, user_data in enumerate(lb_data) if user_data["_id"] == user.id), -1)
+
+        for i in range(places):
+            try:
+                user_id = lb_data[i]["_id"]
+                invitedUsers = len(lb_data[i]["invitedUsers"])
+                leaderboard_embed.add_field(
+                    name=f"{i + 1}. {invitedUsers} Invites",
+                    value=f"<@{user_id}>      <<<<" if index == i else f"<@{user_id}>",
+                    inline=False
+                )
+            except IndexError:
+                leaderboard_embed.add_field(name=f"**<< {i + 1} >>**", value="N/A | NaN", inline=False)
+
+        if index >= places:
+            leaderboard_embed.add_field(name="-" * 5 + " Your position " + "-" * 5, value="", inline=False)
+            for i in range(1, -2, -1):
+                if index - i < places:
+                    continue
+                try:
+                    user_id = lb_data[index - i]["_id"]
+                    invitedUsers = lb_data[index - i]["invitedUsers"]
+                    leaderboard_embed.add_field(
+                        name=f"{index - i + 1}. {invitedUsers} Invites",
+                        value=f"<@{user_id}>      <<<<" if i == 0 else f"<@{user_id}>",
+                        inline=False
+                    )
+                except IndexError:
+                    leaderboard_embed.add_field(name=f"**<< {index - i + 1} >>**", value="N/A | NaN", inline=False)
+
+        await ctx.followup.send(embed=leaderboard_embed)
 
 
 async def setup(client):

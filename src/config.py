@@ -1,15 +1,147 @@
 from PIL import Image, ImageDraw, ImageOps, ImageFont
 import io
 
-# Processing
+# Do not change
 cogs = ["lfg", "invites", "redeem", "xp", "misc"]
+HOK_ROLES = ["Clash Lane", "Farm Lane", "Mid Lane", "Jungler", "Roamer"]
+THUMBNAIL_URL = "https://i.postimg.cc/VsSnmbYb/355880079-692682859537191-2670861757827348493-n.jpg"
+TEAM_URL = "https://i.postimg.cc/WzBVv8QN/1035x460.png"
+TEAM_SIZES = {"Duo": "2", "Trio": "3", "5-men": "5"}
+COORDS = {
+    'Roamer': (102, 178),
+    'Jungler': (286, 322),
+    'Mid Lane': (499, 175),
+    'Farm Lane': (706, 321),
+    'Clash Lane': (892, 178)
+}
+expRequired = {
+    "1": 1,
+    "2": 200,
+    "3": 450,
+    "4": 800,
+    "5": 1250,
+    "6": 1800,
+    "7": 2450,
+    "8": 3200,
+    "9": 4050,
+    "10": 5000,
+    "11": 6050,
+    "12": 7200,
+    "13": 8450,
+    "14": 9800,
+    "15": 11250,
+    "16": 12800,
+    "17": 14450,
+    "18": 16200,
+    "19": 18050,
+    "20": 20000,
+    "21": 22050,
+    "22": 24200,
+    "23": 26450,
+    "24": 28800,
+    "25": 31250,
+    "26": 33800,
+    "27": 36450,
+    "28": 39200,
+    "29": 42050,
+    "30": 45000,
+    "31": 48050,
+    "32": 51200,
+    "33": 54450,
+    "34": 57800,
+    "35": 61250,
+    "36": 64800,
+    "37": 68450,
+    "38": 72200,
+    "39": 76050,
+    "40": 80000,
+    "41": 84050,
+    "42": 88200,
+    "43": 92450,
+    "44": 96800,
+    "45": 101250,
+    "46": 105800,
+    "47": 110450,
+    "48": 115200,
+    "49": 120050,
+    "50": 125000,
+    "51": 130050,
+    "52": 135200,
+    "53": 140450,
+    "54": 145800,
+    "55": 151250,
+    "56": 156800,
+    "57": 162450,
+    "58": 168200,
+    "59": 174050,
+    "60": 180000,
+    "61": 186050,
+    "62": 192200,
+    "63": 198450,
+    "64": 204800,
+    "65": 211250,
+    "66": 217800,
+    "67": 224450,
+    "68": 231200,
+    "69": 238050,
+    "70": 245000,
+    "71": 252050,
+    "72": 259200,
+    "73": 266450,
+    "74": 273800,
+    "75": 281250,
+    "76": 288800,
+    "77": 296450,
+    "78": 304200,
+    "79": 312050,
+    "80": 320000,
+    "81": 328050,
+    "82": 336200,
+    "83": 344450,
+    "84": 352800,
+    "85": 361250,
+    "86": 369800,
+    "87": 378450,
+    "88": 387200,
+    "89": 396050,
+    "90": 405000,
+    "91": 414050,
+    "92": 423200,
+    "93": 432450,
+    "94": 441800,
+    "95": 451250,
+    "96": 460800,
+    "97": 470450,
+    "98": 480200,
+    "99": 490050,
+    "100": 500000,
+}  # Exp required to reach each level
+color_scheme = {  # Color Scheme for the level boxes
+    1: "#2B4663",
+    2: "#29445F",
+    3: "#283D5A",
+    4: "#3E4B75",
+    5: "#485482",
+    6: "#4F598A",
+    7: "#535D90",
+    8: "#62679F",
+    9: "#6969A1",
+    10: "#7469A1"
+}
+
+# Modify values below!
+
 STAFF_ROLE_IDS = [1253221573465346100]
+DATABASE_NAME = 'HOKA'
 
 # LFG
 HOK_RANKS = {"Bronze": "<:bronze:1255772551322402857>", "Silver": "<:rank_2_silver:1255773186667319347>", "Gold": "<:rank_3_gold:1255773184620363796>",
              "Platinum": "<:rank_4_platinum:1255773181696807004>", "Diamond": "<:rank_5_diamond:1255773180094844938>", "Master": "<:rank_6_master:1255773177531859006>",
-             "Grandmaster": "<:rank_7_grandmaster:1255773175749283912>"}
-HOK_ROLES = ["Clash Lane", "Farm Lane", "Mid Lane", "Jungler", "Roamer"]
+             "Grandmaster": "<:rank_7_grandmaster:1255773175749283912>",
+             "Mythic Grandmaster": "<:rank_7_grandmaster:1255773175749283912>",
+             "Epic Grandmaster": "<:epicgrandmaster:1268462905511252068>",
+             "Legend Grandmaster": "<:epicgrandmaster:1268462905511252068>",
+             }
 
 HOK_RANKS_ROLE_IDS = {  # Rank: Rank Role ID
     'Bronze': '1256128781266063452',
@@ -18,7 +150,10 @@ HOK_RANKS_ROLE_IDS = {  # Rank: Rank Role ID
     'Platinum': '1256128785644916809',
     'Diamond': '1256128787221839944',
     'Master': '1256128788685656154',
-    'Grandmaster': '1256128790132686858'
+    'Grandmaster': '1256128790132686858',
+    'Mythic Grandmaster': '1256128790132686858',
+    'Epic Grandmaster': '1256128790132686858',
+    'Legend Grandmaster': '1256128790132686858',
 }
 
 PARTY_VC_CATEGORY_ID = 1266283672030416906
@@ -26,24 +161,12 @@ PARTY_INVALIDITY_LIMIT = 30 * 60  # Seconds
 VC_INVALIDITY_LIMIT = 10 * 60  # Seconds
 
 # URL for the thumbnail that will appear on the LFG Embed
-THUMBNAIL_URL = "https://i.postimg.cc/VsSnmbYb/355880079-692682859537191-2670861757827348493-n.jpg"
-TEAM_URL = "https://i.postimg.cc/WzBVv8QN/1035x460.png"
-# TEAM_SIZES = {"Duo": "2", "Trio": "3", "5-Men": "5", "5-Women (We are Feminist)": "5.0"}
-TEAM_SIZES = {"Duo": "2", "Trio": "3", "5-men": "5"}
 DEV_GUILD_ID = 1248544817357787168
 LFG_REMINDER_SECONDS = 60 * 5
-# LFG_MSG_CHANNEL_ID = 1257935093507293214
-# LFG_POST_CHANNEL_ID = 1257935093507293214
 LFG_POST_CHANNEL_ID = 1258347247117008947
 LFG_MSG_CHANNEL_ID = 1266305363897094184
 STORAGE_ID = 1257950603649486905
-COORDS = {
-    'Roamer': (102, 178),
-    'Jungler': (286, 322),
-    'Mid Lane': (499, 175),
-    'Farm Lane': (706, 321),
-    'Clash Lane': (892, 178)
-}
+
 
 # Invites
 INVITE_LINK_CHANNEL_ID = 1248544817806315585  # Channel ID where invited users will be first sent (like #annoucement or #general)
@@ -67,140 +190,25 @@ EXP_MODIFIER_ROLE_IDS = {
 }
 ASSIGN_ROLE_ON_LEVEL_UP = {
     #  Level - Role ID
-    10: 1253221573465346100
+    10: 1261984637375352872,
+    5: 1268470471272431649,
+    15: 1268470401730740277
 }
 
-LEVEL_UP_MSG = "Congratulations {user}, you have reached level {newLevel} from level {oldLevel}!"
-# LEVEL_UP_ANNOUNCEMENT_CHANNEL_ID = 1248544817806315585  # Channel ID where level up messages will be sent
-
-expRequired = {
-    "1": 0,
-    "2": 150,
-    "3": 300,
-    "4": 500,
-    "5": 750,
-    "6": 1050,
-    "7": 1400,
-    "8": 1800,
-    "9": 2250,
-    "10": 2750,
-    "11": 3300,
-    "12": 3900,
-    "13": 4550,
-    "14": 5250,
-    "15": 6000,
-    "16": 6800,
-    "17": 7650,
-    "18": 8550,
-    "19": 9500,
-    "20": 10500,
-    "21": 11550,
-    "22": 12650,
-    "23": 13800,
-    "24": 15000,
-    "25": 16250,
-    "26": 17550,
-    "27": 18900,
-    "28": 20300,
-    "29": 21750,
-    "30": 23250,
-    "31": 24800,
-    "32": 26400,
-    "33": 28050,
-    "34": 29750,
-    "35": 31500,
-    "36": 33300,
-    "37": 35150,
-    "38": 37050,
-    "39": 39000,
-    "40": 41000,
-    "41": 43050,
-    "42": 45150,
-    "43": 47300,
-    "44": 49500,
-    "45": 51750,
-    "46": 54050,
-    "47": 56400,
-    "48": 58800,
-    "49": 61250,
-    "50": 63750,
-    "51": 66300,
-    "52": 68900,
-    "53": 71550,
-    "54": 74250,
-    "55": 77000,
-    "56": 79800,
-    "57": 82650,
-    "58": 85550,
-    "59": 88500,
-    "60": 91500,
-    "61": 94550,
-    "62": 97650,
-    "63": 100800,
-    "64": 104000,
-    "65": 107250,
-    "66": 110550,
-    "67": 113900,
-    "68": 117300,
-    "69": 120750,
-    "70": 124250,
-    "71": 127800,
-    "72": 131400,
-    "73": 135050,
-    "74": 138750,
-    "75": 142500,
-    "76": 146300,
-    "77": 150150,
-    "78": 154050,
-    "79": 158000,
-    "80": 162000,
-    "81": 166050,
-    "82": 170150,
-    "83": 174300,
-    "84": 178500,
-    "85": 182750,
-    "86": 187050,
-    "87": 191400,
-    "88": 195800,
-    "89": 200250,
-    "90": 204750,
-    "91": 209300,
-    "92": 213900,
-    "93": 218550,
-    "94": 223250,
-    "95": 228000,
-    "96": 232800,
-    "97": 237650,
-    "98": 242550,
-    "99": 247500,
-    "100": 500000,
-}  # Exp required to reach each level
-
-color_scheme = {
-    1: "#2B4663",
-    2: "#29445F",
-    3: "#283D5A",
-    4: "#3E4B75",
-    5: "#485482",
-    6: "#4F598A",
-    7: "#535D90",
-    8: "#62679F",
-    9: "#6969A1",
-    10: "#7469A1"
-}
+LEVEL_UP_MSG = "Congratulations {user}, you have reached level **{newLevel}** from level **{oldLevel}**!"
 
 
 def mainFont(size):
-    return ImageFont.truetype("mainfont.otf", size)
+    return ImageFont.truetype("data/mainfont.otf", size)
 
 
 def nameFont(size):
-    return ImageFont.truetype("namefont.ttf", size)
+    return ImageFont.truetype("data/namefont.ttf", size)
 
 
 def fontSizeFilter(text, size=35, max_length=486):
     # Load the font
-    font = ImageFont.truetype("namefont.ttf", size)
+    font = ImageFont.truetype("data/namefont.ttf", size)
 
     # Create a dummy image to get a drawing context
     dummy_image = Image.new("RGB", (1, 1))
@@ -288,13 +296,11 @@ def draw_text_with_outline(image, text, position, font, text_color, outline_colo
 
     x, y = position
 
-    # Draw the text outline
     for dx in range(-outline_width, outline_width + 1):
         for dy in range(-outline_width, outline_width + 1):
             if dx != 0 or dy != 0:
                 draw.text((x + dx, y + dy), text, font=font, fill=outline_color)
 
-    # Draw the text on top of the outline
     draw.text((x, y), text, font=font, fill=text_color)
 
 
@@ -335,14 +341,12 @@ def draw_box(draw, box, color):
     width = x1 - x0
     height = y1 - y0
 
-    # Calculate the color difference
     r1, g1, b1 = color
     r2, g2, b2 = color
     dr = (r2 - r1) / width
     dg = (g2 - g1) / width
     db = (b2 - b1) / width
 
-    # Fill the box with gradient
     for i in range(width):
         r = int(r1 + dr * i)
         g = int(g1 + dg * i)
@@ -370,11 +374,10 @@ def drawLevel(text, image):
 
 def drawLevelBoxes(percent, image):
     box_width, box_height = 55, 55
-    gap = 5  # Set the gap to 5 pixels
+    gap = 5
     emptyColor = "#C5BCD1"
     num_boxes = 10
     x, y = 350, 170
-    # Calculate the number of full, partial, and empty boxes
     num_full_boxes = int(num_boxes * percent / 100)
     num_partial_boxes = 1 if percent % 10 >= 5 else 0
     num_empty_boxes = num_boxes - num_full_boxes - num_partial_boxes
@@ -392,15 +395,12 @@ def drawLevelBoxes(percent, image):
         box = (x0, y0, x1, y1)
 
         if i < num_full_boxes:
-            # Full box
             draw_box(draw, box, color)
 
         elif i == num_full_boxes and num_partial_boxes:
-            # Partial box
             draw_box(draw, (x0, y0, x0 + int(box_width * 0.5), y1), color)
             draw.rectangle([(x0 + int(box_width * 0.5), y0), (x1, y1)], fill=emptyColor)
         else:
-            # Empty box
             draw.rectangle([(x0, y0), (x1, y1)], fill=emptyColor)
 
 
@@ -416,9 +416,8 @@ def numFormat(num):
 
 
 def expLine(expMin, expMax, image):
-    img = Image.open("img.png")
+    img = Image.open("data/img.png")
     draw = ImageDraw.Draw(image)
-    #  835 or 820
 
     draw.text((820, 237), fill="#295372", font=mainFont(25), text=f"{numFormat(expMin)}/{numFormat(expMax)}")
     draw.text((910, 220), fill="#295372", font=mainFont(45), text="XP")

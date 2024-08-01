@@ -19,7 +19,5 @@ class MiscCog(commands.Cog):
         await ctx.followup.send(content=f"Loaded {len(synced)} commands")
 
 
-
-
 async def setup(client):
     await client.add_cog(MiscCog(client))
