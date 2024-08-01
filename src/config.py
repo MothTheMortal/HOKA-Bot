@@ -180,7 +180,7 @@ REDEEM_LOG_CHANNEL_ID = 1234059151743914004  # Channel ID where logs for redeem 
 TICKET_CATEGORY_ID = 1268485290989846548  # Category ID where ticket channels will be created
 
 # EXP & Leveling
-EXP_RATE = 9  # Exp per MSG
+EXP_RATE = 18  # Exp per MSG
 EXP_DELAY = 30  # How many seconds before letting user earn xp again
 BANNED_EXP_CHANNEL_IDS = [1222469445017141308, 1213025549589422110, 1213019534467010592, 1253140906966646855]  # Channels that will not give users EXP
 EXP_MODIFIER_ROLE_IDS = {
