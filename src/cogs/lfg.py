@@ -305,13 +305,19 @@ class LFGCog(commands.Cog):
         async def joinCallback(ctx: Interaction):
             nonlocal last_interaction_time
             last_interaction_time = datetime.now()  # Update last interaction time
+
+            await ctx.response.send_message("*Joining Party...*", ephemeral=True)
+
             async with self.party_locks[party_id]:  # Acquire the lock for this party
-                if ctx.user in users or not len(users) < int(size):
-                    return await ctx.response.edit_message(attachments=[])
+                if ctx.user in users:
+                    return await ctx.edit_original_response(content="You are already in this party.", ephemeral=True)
+
+                if not len(users) < int(size):
+                    return await ctx.edit_original_response(content="The party is full")
 
                 for party in self.active_lfg:
                     if ctx.user in party[4]:
-                        return await ctx.response.send_message("You are already in an active party.", ephemeral=True)
+                        return await ctx.edit_original_response(content="You are already in an active party.", ephemeral=True)
 
 
                 eligible = False
@@ -322,28 +328,29 @@ class LFGCog(commands.Cog):
                         break
 
                 if not eligible:
-                    return await ctx.response.send_message("You do not have the required rank role to join this party. Please select them in Channels & Roles", ephemeral=True)
+                    return await ctx.edit_original_response(content="You do not have the required rank role to join this party. Please select them in Channels & Roles")
 
                 roleDropdown = ui.Select(placeholder="Select Role", options=[discord.SelectOption(label=key, value=key) for key in config.HOK_ROLES])
 
                 async def roleCallback(ctx: Interaction):
                     nonlocal last_interaction_time
                     last_interaction_time = datetime.now()  # Update last interaction time
+
+                    await ctx.response.send_message("*Selecting Role...*", ephemeral=True)
                     async with self.party_locks[party_id]:  # Acquire the lock for this party
                         roleSelected = roleDropdown.values[0]
                         if roleSelected in userRoles.values():
-                            return await ctx.response.send_message("This role has already been selected.", ephemeral=True)
+                            return await ctx.edit_original_response(content="This role has already been selected.")
 
                         if not len(users) < int(size):
-                            return await ctx.response.send_message("The party is already full", ephemeral=True)
+                            return await ctx.edit_original_response(content="The party is already full")
 
                         if voiceChannel:
                             overwrites = voiceChannel.overwrites
                             overwrites[ctx.user] = discord.PermissionOverwrite(connect=True, view_channel=True)
                             await voiceChannel.edit(overwrites=overwrites)
 
-                        await ctx.response.send_message(f"**Party code: {code if code else f'Contact {partyLeader.mention}'}**\n{'**VC:** ' + voiceChannel.mention if voiceChannel else ''}",
-                                                        ephemeral=True)
+                        await ctx.edit_original_response(content=f"**Party code: {code if code else f'Contact {partyLeader.mention}'}**\n{'**VC:** ' + voiceChannel.mention if voiceChannel else ''}")
 
                         users.append(ctx.user)
                         userRoles[ctx.user] = roleSelected
@@ -354,18 +361,21 @@ class LFGCog(commands.Cog):
                 view = ui.View(timeout=None)
                 view.add_item(roleDropdown)
 
-                await ctx.response.send_message(view=view, ephemeral=True)
+                await ctx.edit_original_response(content="", view=view)
 
         async def createVcCallback(ctx: Interaction):
             nonlocal voiceChannel, last_interaction_time
+
+            if ctx.user != partyLeader:
+                return await ctx.response.edit_message(attachments=[])
+
+            if voiceChannel:  # Check if voiceChannel is already set
+                return await ctx.response.edit_message(attachments=[])
+
+            await ctx.response.send_message("Creating VC...", ephemeral=True)
             last_interaction_time = datetime.now()  # Update last interaction time
+
             async with self.party_locks[party_id]:  # Acquire the lock for this party
-
-                if ctx.user != partyLeader:
-                    return await ctx.response.edit_message(attachments=[])
-
-                if voiceChannel:  # Check if voiceChannel is already set
-                    return await ctx.response.edit_message(attachments=[])
 
                 category = await ctx.guild.fetch_channel(config.PARTY_VC_CATEGORY_ID)
 
@@ -382,7 +392,7 @@ class LFGCog(commands.Cog):
                     if user != partyLeader:
                         await user.send(content=f"A voice channel has been created for your party: {voiceChannel.mention}")
 
-                await ctx.response.send_message(f"Voice Channel has been created: {voiceChannel.mention}", ephemeral=True)
+                await ctx.edit_original_response(content=f"Voice Channel has been created: {voiceChannel.mention}")
 
         joinButton.callback = joinCallback
         leaveButton.callback = leaveCallback
