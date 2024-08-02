@@ -271,11 +271,14 @@ class LFGCog(commands.Cog):
         async def leaveCallback(ctx: Interaction):
             nonlocal last_interaction_time
             last_interaction_time = datetime.now()  # Update last interaction time
+
+            await ctx.response.send_message("Leaving party...", ephemeral=True)
+
             async with self.party_locks[party_id]:  # Acquire the lock for this party
                 if ctx.user not in users:
-                    return await ctx.response.edit_message(attachments=[])
+                    return await ctx.edit_original_response(content="You are not in this party!")
                 if ctx.user == partyLeader:
-                    await ctx.response.edit_message(attachments=[])
+                    await ctx.edit_original_response(content="Party deleted.")
                     for party in self.active_lfg:
                         if partyMessage in party:
                             self.active_lfg.remove(party)
@@ -285,7 +288,6 @@ class LFGCog(commands.Cog):
                         await voiceChannel.delete()
 
                     return await partyMessage.delete()
-
 
 
                 if voiceChannel:
@@ -299,7 +301,7 @@ class LFGCog(commands.Cog):
 
                 users.remove(ctx.user)
 
-                await ctx.response.edit_message(attachments=[])
+                await ctx.edit_original_response(content="You have left the party.")
                 await refreshEmbed()
 
         async def joinCallback(ctx: Interaction):
@@ -310,14 +312,14 @@ class LFGCog(commands.Cog):
 
             async with self.party_locks[party_id]:  # Acquire the lock for this party
                 if ctx.user in users:
-                    return await ctx.edit_original_response(content="You are already in this party.", ephemeral=True)
+                    return await ctx.edit_original_response(content="You are already in this party.")
 
                 if not len(users) < int(size):
                     return await ctx.edit_original_response(content="The party is full")
 
                 for party in self.active_lfg:
                     if ctx.user in party[4]:
-                        return await ctx.edit_original_response(content="You are already in an active party.", ephemeral=True)
+                        return await ctx.edit_original_response(content="You are already in an active party.")
 
 
                 eligible = False
